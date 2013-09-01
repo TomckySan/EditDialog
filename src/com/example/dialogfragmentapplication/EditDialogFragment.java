@@ -67,7 +67,6 @@ public class EditDialogFragment extends DialogFragment {
 			mListener = (OnUpdateEditDataListener)activity;
 		} catch (ClassCastException e){
 			throw new IllegalStateException("activity should implement FragmentCallbacks", e);
-			// TODO:↓こっちでもいい？違いは要調査
 			// throw new ClassCastException(activity.toString() + " must implement OnArticleSelectedListener");
 		} 
 	}
