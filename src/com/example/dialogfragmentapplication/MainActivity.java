@@ -19,6 +19,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener, O
 	MySQLiteOpenHelper mHelper = null;
 	SQLiteDatabase mDb = null;
 	EditData mData = null;
+	boolean mHasDataNothingDB = true;
 	
 	private TextView mTitleText = null;
 	private TextView mMemoText = null;
@@ -32,8 +33,10 @@ public class MainActivity extends FragmentActivity implements OnClickListener, O
 		mHelper = new MySQLiteOpenHelper(getApplicationContext());
 		mDb = mHelper.getWritableDatabase();
 		
+//		DatabaseExcuteUtility.deleteAllExcute(mDb);
+		
 		// テーブル内のデータを全て取得
-		final List<EditData> dataList = DatabaseExcuteUtility.selectAllExcute(mDb);
+		final List<EditData> dataList = DatabaseExcuteUtility.selectDataExcute(mDb);
 		
 		mData = null;
 		if(dataList.size() == 0) {
@@ -42,6 +45,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener, O
 		else {
 			// 最初のデータだけ取得する
 			mData = dataList.get(0);
+			mHasDataNothingDB = false;
 		}
 		
 		mTitleText = (TextView)findViewById(R.id.title_text);
@@ -61,7 +65,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener, O
 	public void onClick(View v) {
 		
 		if(v.getId() == R.id.edit_button) {
-			EditDialogFragment customDialog = EditDialogFragment.newInstance(mData);
+			EditDialogFragment customDialog = EditDialogFragment.newInstance(mData, mHasDataNothingDB);
 			customDialog.show(getSupportFragmentManager(), "customDialog");
 		}
 	}
@@ -69,7 +73,7 @@ public class MainActivity extends FragmentActivity implements OnClickListener, O
 	@Override
 	public void onUpdateEditData() {
 		// テーブル内のデータを全て取得
-		final List<EditData> dataList = DatabaseExcuteUtility.selectAllExcute(mDb);
+		final List<EditData> dataList = DatabaseExcuteUtility.selectDataExcute(mDb);
 		
 		mData = null;
 		if(dataList.size() == 0) {

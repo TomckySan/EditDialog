@@ -2,21 +2,28 @@ package com.example.dialogfragmentapplication;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class EditDialogFragment extends DialogFragment {
+	
+	private static final String DEBUG_TAG = "EditDialogFragment_DB_Table";
 	
 	OnUpdateEditDataListener mListener;
 	
 	TextView mTxtTitle = null;
 	TextView mTxtMemo = null;
+	
+	boolean mHasDataNothingDB;
 	
 	/**
 	 * ダイアログ生成時イベント
@@ -38,16 +45,25 @@ public class EditDialogFragment extends DialogFragment {
 		mTxtMemo = (TextView)dialog.findViewById(R.id.memo);
 		mTxtMemo.setText(memo);
 		
+		mHasDataNothingDB = getArguments().getBoolean("NothingData");
+		
 		dialog.findViewById(R.id.finish_button).setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				
+				// 未入力状態はNG
+				if (mTxtTitle.getText() == null || mTxtTitle.getText().length() == 0) {
+					Toast.makeText(getActivity(), "タイトルを入力してください", Toast.LENGTH_SHORT).show();
+					return;
+				}
 				
 				SQLiteDatabase db = ((MainActivity)getActivity()).mDb;
 				
 				// 編集後のデータをまとめる
 				final EditData editData = new EditData(mTxtTitle.getText().toString(), mTxtMemo.getText().toString());
 				// データ挿入
-				DatabaseExcuteUtility.insertDataExcute(db, editData);
+				String msg = DatabaseExcuteUtility.editDataExcute(db, editData, mHasDataNothingDB);
+				Toast.makeText(getActivity(), msg, Toast.LENGTH_SHORT).show();
 				
 				// アクティビティへイベントを飛ばす
 				mListener.onUpdateEditData();
@@ -56,6 +72,19 @@ public class EditDialogFragment extends DialogFragment {
 				dismiss();
 			}
 		});
+		
+		// ---デバッグ用---
+		// テーブルデータをLogCatに出力
+		Cursor cursor = ((MainActivity)getActivity()).mDb.query(
+				"sample_table", new String[] {"_id", "title", "memo"},
+				null, null, null, null, "_id DESC");
+		// 参照先を一番初始めに
+		boolean isEof = cursor.moveToFirst();
+		while(isEof) {
+			Log.d(DEBUG_TAG, ""+cursor.getInt(0)+":"+cursor.getString(1)+":"+cursor.getString(2));
+			isEof = cursor.moveToNext();
+		}
+		// ---------------
 		
 		return dialog;
 	}
@@ -90,7 +119,7 @@ public class EditDialogFragment extends DialogFragment {
 	 * CustomDialogFragmentのインスタンス生成(できる限りMainActivityには書かない)
 	 * @param data
 	 */
-	static EditDialogFragment newInstance(EditData data) {
+	static EditDialogFragment newInstance(EditData data, boolean hasDataNothingDB) {
 		
 		final EditDialogFragment customDialog = new EditDialogFragment();
 		
@@ -101,6 +130,7 @@ public class EditDialogFragment extends DialogFragment {
 		Bundle args = new Bundle();
 		args.putString("Title", title);
 		args.putString("Memo", memo);
+		args.putBoolean("NothingData", hasDataNothingDB);
 		
 		customDialog.setArguments(args);
 		
